@@ -1,0 +1,15 @@
+{
+  "name": "footstep-power-backend",
+  "version": "1.0.0",
+  "description": "Backend for Footstep Power Generation Dashboard",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "nodemon server.js"
+  },
+  "dependencies": {
+    "body-parser": "^1.20.2",
+    "cors" : "^2.8.5",
+    "express": "^4.18.2"
+  }
+}

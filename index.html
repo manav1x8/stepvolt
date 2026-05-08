@@ -1,0 +1,1096 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>FootStep Power — IoT Dashboard</title>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;500;600;700;800&family=IBM+Plex+Mono:wght@400;500&family=Outfit:wght@300;400;500;600&display=swap" rel="stylesheet"/>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+<style>
+:root {
+  --bg: #0a0f0d;
+  --bg2: #111a16;
+  --bg3: #162019;
+  --card: #1a2620;
+  --card2: #1f2e28;
+  --border: rgba(45,200,120,0.12);
+  --border2: rgba(45,200,120,0.22);
+  --green: #2dc878;
+  --green2: #1fa85a;
+  --green3: #0d7a3e;
+  --green-glow: rgba(45,200,120,0.15);
+  --teal: #14e6b0;
+  --amber: #f5a623;
+  --red: #ff4d6d;
+  --text: #e8f5ee;
+  --text2: #8eb8a0;
+  --text3: #4d7a60;
+  --mono: 'IBM Plex Mono', monospace;
+  --display: 'Syne', sans-serif;
+  --body: 'Outfit', sans-serif;
+}
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+html { scroll-behavior: smooth; }
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: var(--body);
+  min-height: 100vh;
+  overflow-x: hidden;
+}
+
+/* ── SCANLINE OVERLAY ── */
+body::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  background: repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(0,0,0,0.03) 2px, rgba(0,0,0,0.03) 4px);
+  pointer-events: none;
+  z-index: 9999;
+}
+
+/* ── GRID BG ── */
+body::after {
+  content: '';
+  position: fixed;
+  inset: 0;
+  background-image:
+    linear-gradient(rgba(45,200,120,0.04) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(45,200,120,0.04) 1px, transparent 1px);
+  background-size: 40px 40px;
+  pointer-events: none;
+  z-index: 0;
+}
+
+/* ── NAVBAR ── */
+nav {
+  position: fixed;
+  top: 0; left: 0; right: 0;
+  z-index: 100;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 2rem;
+  height: 60px;
+  background: rgba(10,15,13,0.85);
+  backdrop-filter: blur(20px);
+  border-bottom: 1px solid var(--border);
+}
+.nav-logo {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-family: var(--display);
+  font-weight: 800;
+  font-size: 1.1rem;
+  color: var(--green);
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+.nav-logo-icon {
+  width: 32px; height: 32px;
+  background: var(--green);
+  border-radius: 8px;
+  display: grid;
+  place-items: center;
+}
+.nav-logo-icon svg { width: 18px; height: 18px; fill: var(--bg); }
+.nav-links { display: flex; gap: 2rem; }
+.nav-links a {
+  font-size: 0.85rem;
+  font-weight: 500;
+  color: var(--text2);
+  text-decoration: none;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  transition: color 0.2s;
+}
+.nav-links a:hover { color: var(--green); }
+.nav-live {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  font-family: var(--mono);
+  font-size: 0.75rem;
+  color: var(--green);
+  background: rgba(45,200,120,0.08);
+  border: 1px solid rgba(45,200,120,0.2);
+  border-radius: 20px;
+  padding: 5px 14px;
+}
+.live-dot {
+  width: 7px; height: 7px;
+  border-radius: 50%;
+  background: var(--green);
+  animation: blink 1.4s infinite;
+}
+@keyframes blink { 0%,100%{opacity:1} 50%{opacity:0.2} }
+
+/* ── WRAPPER ── */
+.wrapper {
+  position: relative;
+  z-index: 1;
+  max-width: 1280px;
+  margin: 0 auto;
+  padding: 80px 1.5rem 3rem;
+}
+
+/* ── HERO ── */
+.hero {
+  text-align: center;
+  padding: 4rem 0 3rem;
+}
+.hero-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-family: var(--mono);
+  font-size: 0.72rem;
+  color: var(--teal);
+  background: rgba(20,230,176,0.08);
+  border: 1px solid rgba(20,230,176,0.2);
+  border-radius: 20px;
+  padding: 5px 14px;
+  margin-bottom: 1.5rem;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+.hero h1 {
+  font-family: var(--display);
+  font-size: clamp(2.4rem, 6vw, 4.5rem);
+  font-weight: 800;
+  line-height: 1.05;
+  letter-spacing: -0.02em;
+  margin-bottom: 1rem;
+}
+.hero h1 span { color: var(--green); }
+.hero p {
+  font-size: 1.05rem;
+  color: var(--text2);
+  max-width: 500px;
+  margin: 0 auto 2rem;
+  line-height: 1.7;
+}
+.hero-actions { display: flex; gap: 12px; justify-content: center; flex-wrap: wrap; }
+.btn-primary {
+  background: var(--green);
+  color: var(--bg);
+  border: none;
+  padding: 12px 28px;
+  border-radius: 10px;
+  font-family: var(--display);
+  font-weight: 700;
+  font-size: 0.9rem;
+  cursor: pointer;
+  letter-spacing: 0.04em;
+  transition: transform 0.15s, background 0.2s;
+}
+.btn-primary:hover { background: var(--teal); transform: translateY(-2px); }
+.btn-outline {
+  background: transparent;
+  color: var(--green);
+  border: 1px solid rgba(45,200,120,0.35);
+  padding: 12px 28px;
+  border-radius: 10px;
+  font-family: var(--display);
+  font-weight: 600;
+  font-size: 0.9rem;
+  cursor: pointer;
+  letter-spacing: 0.04em;
+  transition: background 0.2s, transform 0.15s;
+}
+.btn-outline:hover { background: rgba(45,200,120,0.08); transform: translateY(-2px); }
+
+/* ── STAT STRIP ── */
+.stat-strip {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 1px;
+  background: var(--border);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  overflow: hidden;
+  margin-bottom: 2rem;
+}
+.stat-cell {
+  background: var(--card);
+  padding: 1.5rem 1.25rem;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  transition: background 0.2s;
+}
+.stat-cell:hover { background: var(--card2); }
+.stat-label {
+  font-family: var(--mono);
+  font-size: 0.68rem;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--text3);
+}
+.stat-value {
+  font-family: var(--display);
+  font-size: 2rem;
+  font-weight: 800;
+  color: var(--text);
+  line-height: 1;
+}
+.stat-value span { font-size: 1rem; color: var(--text2); font-weight: 400; margin-left: 2px; }
+.stat-delta {
+  font-family: var(--mono);
+  font-size: 0.72rem;
+  color: var(--green);
+}
+
+/* ── SECTION TITLES ── */
+.section { margin-bottom: 2rem; }
+.section-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 1rem;
+  gap: 1rem;
+}
+.section-title {
+  font-family: var(--display);
+  font-size: 1.05rem;
+  font-weight: 700;
+  color: var(--text);
+  letter-spacing: 0.02em;
+}
+.section-sub {
+  font-family: var(--mono);
+  font-size: 0.7rem;
+  color: var(--text3);
+  letter-spacing: 0.08em;
+}
+
+/* ── CARDS ── */
+.card {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  padding: 1.5rem;
+  transition: border-color 0.2s;
+}
+.card:hover { border-color: var(--border2); }
+
+/* ── INPUT PANEL ── */
+.input-panel {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  padding: 1.75rem;
+  margin-bottom: 2rem;
+}
+.input-panel-title {
+  font-family: var(--display);
+  font-size: 1rem;
+  font-weight: 700;
+  margin-bottom: 1.25rem;
+  color: var(--text);
+}
+.step-btns {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+  margin-bottom: 1.25rem;
+}
+.step-btn {
+  flex: 1;
+  min-width: 140px;
+  padding: 14px 16px;
+  border-radius: 10px;
+  border: 1px solid var(--border2);
+  background: var(--bg3);
+  color: var(--text2);
+  font-family: var(--body);
+  font-size: 0.85rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s;
+  text-align: left;
+}
+.step-btn:hover { border-color: var(--green); color: var(--text); background: var(--card2); }
+.step-btn.active { border-color: var(--green); background: rgba(45,200,120,0.12); color: var(--green); }
+.step-btn .sb-val { font-family: var(--mono); font-size: 0.72rem; color: var(--text3); margin-top: 4px; display: block; }
+.step-btn.active .sb-val { color: var(--green2); }
+
+.custom-row {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  flex-wrap: wrap;
+}
+.custom-row label {
+  font-size: 0.8rem;
+  color: var(--text2);
+  font-family: var(--mono);
+  white-space: nowrap;
+}
+.custom-row input[type=number] {
+  flex: 1;
+  min-width: 160px;
+  background: var(--bg3);
+  border: 1px solid var(--border2);
+  border-radius: 8px;
+  color: var(--text);
+  font-family: var(--mono);
+  font-size: 0.9rem;
+  padding: 10px 14px;
+  outline: none;
+  transition: border-color 0.2s;
+}
+.custom-row input[type=number]:focus { border-color: var(--green); }
+.custom-row input[type=number]::placeholder { color: var(--text3); }
+.log-btn {
+  background: var(--green);
+  color: var(--bg);
+  border: none;
+  padding: 10px 28px;
+  border-radius: 8px;
+  font-family: var(--display);
+  font-weight: 700;
+  font-size: 0.9rem;
+  cursor: pointer;
+  transition: background 0.2s, transform 0.12s;
+  white-space: nowrap;
+}
+.log-btn:hover { background: var(--teal); }
+.log-btn:active { transform: scale(0.97); }
+
+/* ── ZONE SELECT ── */
+.zone-row {
+  margin-top: 1rem;
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  flex-wrap: wrap;
+}
+.zone-row label { font-size: 0.78rem; color: var(--text2); font-family: var(--mono); }
+.zone-select {
+  background: var(--bg3);
+  border: 1px solid var(--border2);
+  border-radius: 8px;
+  color: var(--text);
+  font-family: var(--mono);
+  font-size: 0.85rem;
+  padding: 8px 12px;
+  outline: none;
+  cursor: pointer;
+}
+.zone-select option { background: var(--bg2); }
+
+/* ── CHARTS ── */
+.charts-grid {
+  display: grid;
+  grid-template-columns: 2fr 1fr;
+  gap: 1rem;
+  margin-bottom: 2rem;
+}
+@media(max-width:800px) { .charts-grid { grid-template-columns: 1fr; } }
+.chart-wrap { position: relative; width: 100%; height: 260px; }
+.mini-chart-wrap { position: relative; width: 100%; height: 180px; }
+.chart-card-inner { height: 100%; display: flex; flex-direction: column; }
+.chart-card-inner canvas { flex: 1; }
+
+/* ── DATA TABLE ── */
+.table-wrap {
+  overflow-x: auto;
+  border-radius: 12px;
+}
+table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.85rem;
+}
+thead th {
+  background: var(--bg3);
+  color: var(--text3);
+  font-family: var(--mono);
+  font-size: 0.68rem;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  padding: 12px 16px;
+  text-align: left;
+  border-bottom: 1px solid var(--border);
+  white-space: nowrap;
+}
+tbody tr {
+  border-bottom: 1px solid var(--border);
+  transition: background 0.15s;
+}
+tbody tr:hover { background: rgba(45,200,120,0.04); }
+tbody td {
+  padding: 11px 16px;
+  color: var(--text2);
+  font-family: var(--body);
+  font-size: 0.84rem;
+}
+tbody td:first-child { font-family: var(--mono); color: var(--text3); font-size: 0.78rem; }
+.td-energy { color: var(--green) !important; font-family: var(--mono) !important; font-weight: 500; }
+.td-zone { padding: 3px 10px; border-radius: 20px; font-size: 0.72rem; font-family: var(--mono); font-weight: 500; display: inline-block; }
+.zone-A { background: rgba(45,200,120,0.12); color: var(--green); border: 1px solid rgba(45,200,120,0.25); }
+.zone-B { background: rgba(20,230,176,0.1); color: var(--teal); border: 1px solid rgba(20,230,176,0.2); }
+.zone-C { background: rgba(245,166,35,0.1); color: var(--amber); border: 1px solid rgba(245,166,35,0.2); }
+.zone-D { background: rgba(255,77,109,0.1); color: var(--red); border: 1px solid rgba(255,77,109,0.2); }
+.td-bar { width: 80px; height: 6px; background: rgba(45,200,120,0.1); border-radius: 3px; overflow: hidden; }
+.td-bar-fill { height: 100%; border-radius: 3px; background: var(--green); }
+.del-btn {
+  background: transparent;
+  border: 1px solid rgba(255,77,109,0.3);
+  color: var(--red);
+  border-radius: 6px;
+  padding: 4px 10px;
+  font-size: 0.72rem;
+  cursor: pointer;
+  font-family: var(--mono);
+  transition: background 0.15s;
+}
+.del-btn:hover { background: rgba(255,77,109,0.1); }
+
+/* ── ZONE STATS ── */
+.zone-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 1rem;
+  margin-bottom: 2rem;
+}
+.zone-card {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  padding: 1.25rem;
+  position: relative;
+  overflow: hidden;
+  transition: border-color 0.2s;
+}
+.zone-card:hover { border-color: var(--border2); }
+.zone-card::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  height: 3px;
+}
+.zone-card[data-zone="A"]::before { background: var(--green); }
+.zone-card[data-zone="B"]::before { background: var(--teal); }
+.zone-card[data-zone="C"]::before { background: var(--amber); }
+.zone-card[data-zone="D"]::before { background: var(--red); }
+.zone-card-label {
+  font-family: var(--mono);
+  font-size: 0.7rem;
+  color: var(--text3);
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  margin-bottom: 6px;
+}
+.zone-card-val {
+  font-family: var(--display);
+  font-size: 1.7rem;
+  font-weight: 800;
+  margin-bottom: 4px;
+}
+.zone-card[data-zone="A"] .zone-card-val { color: var(--green); }
+.zone-card[data-zone="B"] .zone-card-val { color: var(--teal); }
+.zone-card[data-zone="C"] .zone-card-val { color: var(--amber); }
+.zone-card[data-zone="D"] .zone-card-val { color: var(--red); }
+.zone-card-sub { font-size: 0.78rem; color: var(--text3); }
+.zone-progress { height: 4px; background: rgba(255,255,255,0.06); border-radius: 2px; margin-top: 10px; overflow: hidden; }
+.zone-progress-fill { height: 100%; border-radius: 2px; transition: width 0.5s; }
+.zone-card[data-zone="A"] .zone-progress-fill { background: var(--green); }
+.zone-card[data-zone="B"] .zone-progress-fill { background: var(--teal); }
+.zone-card[data-zone="C"] .zone-progress-fill { background: var(--amber); }
+.zone-card[data-zone="D"] .zone-progress-fill { background: var(--red); }
+
+/* ── GOAL BAR ── */
+.goal-section {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  padding: 1.5rem;
+  margin-bottom: 2rem;
+  display: flex;
+  align-items: center;
+  gap: 1.5rem;
+  flex-wrap: wrap;
+}
+.goal-label { font-family: var(--mono); font-size: 0.75rem; color: var(--text3); text-transform: uppercase; letter-spacing: 0.1em; min-width: 90px; }
+.goal-bar-outer { flex: 1; height: 10px; background: rgba(255,255,255,0.06); border-radius: 5px; overflow: hidden; min-width: 120px; }
+.goal-bar-inner { height: 100%; border-radius: 5px; background: linear-gradient(90deg, var(--green3), var(--green), var(--teal)); transition: width 0.5s; }
+.goal-pct { font-family: var(--display); font-weight: 700; font-size: 1rem; color: var(--green); white-space: nowrap; }
+.goal-target { font-family: var(--mono); font-size: 0.72rem; color: var(--text3); white-space: nowrap; }
+
+/* ── TOAST ── */
+#toast {
+  position: fixed;
+  bottom: 2rem;
+  right: 2rem;
+  background: var(--card2);
+  border: 1px solid var(--green);
+  border-radius: 10px;
+  padding: 12px 20px;
+  font-family: var(--mono);
+  font-size: 0.8rem;
+  color: var(--green);
+  z-index: 200;
+  transform: translateY(80px);
+  opacity: 0;
+  transition: transform 0.3s, opacity 0.3s;
+  pointer-events: none;
+}
+#toast.show { transform: translateY(0); opacity: 1; }
+
+/* ── CLEAR BTN ── */
+.danger-btn {
+  background: transparent;
+  border: 1px solid rgba(255,77,109,0.35);
+  color: var(--red);
+  padding: 8px 18px;
+  border-radius: 8px;
+  font-family: var(--mono);
+  font-size: 0.75rem;
+  cursor: pointer;
+  letter-spacing: 0.06em;
+  transition: background 0.2s;
+}
+.danger-btn:hover { background: rgba(255,77,109,0.08); }
+
+/* ── EXPORT BTN ── */
+.export-btn {
+  background: transparent;
+  border: 1px solid var(--border2);
+  color: var(--text2);
+  padding: 8px 18px;
+  border-radius: 8px;
+  font-family: var(--mono);
+  font-size: 0.75rem;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+.export-btn:hover { border-color: var(--green); color: var(--green); }
+
+/* ── FOOTER ── */
+footer {
+  text-align: center;
+  padding: 2rem 1rem;
+  font-family: var(--mono);
+  font-size: 0.72rem;
+  color: var(--text3);
+  border-top: 1px solid var(--border);
+  position: relative;
+  z-index: 1;
+}
+footer span { color: var(--green); }
+
+/* ── RESPONSIVE ── */
+@media(max-width:600px) {
+  .nav-links { display: none; }
+  .hero h1 { font-size: 2rem; }
+}
+
+/* ── ANIMATIONS ── */
+@keyframes fadeUp {
+  from { opacity: 0; transform: translateY(24px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+.fade-up { animation: fadeUp 0.6s both; }
+.fade-up:nth-child(2) { animation-delay: 0.1s; }
+.fade-up:nth-child(3) { animation-delay: 0.2s; }
+.fade-up:nth-child(4) { animation-delay: 0.3s; }
+
+/* pulse on new row */
+@keyframes rowFlash {
+  0% { background: rgba(45,200,120,0.18); }
+  100% { background: transparent; }
+}
+.new-row { animation: rowFlash 1.2s ease-out; }
+</style>
+</head>
+<body>
+
+<!-- NAV -->
+<nav>
+  <div class="nav-logo">
+    <div class="nav-logo-icon">
+      <svg viewBox="0 0 24 24"><path d="M13.5 2C13.5 2 13 5 11 7C9 9 6 9 6 9C6 9 6.5 12.5 8.5 14.5C10.5 16.5 14 17 14 17C14 17 13.5 20 12 22L16 22C17.5 20 18 17 18 17C18 17 20 16 21 14C22 12 21.5 9 21.5 9C21.5 9 19 8 17.5 6C16 4 16.5 2 16.5 2Z"/></svg>
+    </div>
+    FootStep Power
+  </div>
+  <div class="nav-links">
+    <a href="#dashboard">Dashboard</a>
+    <a href="#data">Data Log</a>
+    <a href="#zones">Zones</a>
+  </div>
+  <div class="nav-live"><div class="live-dot"></div> IoT Live</div>
+</nav>
+
+<!-- WRAPPER -->
+<div class="wrapper">
+
+  <!-- HERO -->
+  <section class="hero" id="dashboard">
+    <div class="hero-tag">&#9889; Footstep Energy Generation System</div>
+    <h1 class="fade-up">Every Step<br/><span>Generates Power</span></h1>
+    <p class="fade-up">Real-time IoT monitoring of piezoelectric footstep tiles. Track, log, and analyze every press — building a complete energy database.</p>
+    <div class="hero-actions fade-up">
+      <button class="btn-primary" onclick="document.getElementById('custom-val').focus()">&#43; Log Press</button>
+      <button class="btn-outline" onclick="exportCSV()">&#8595; Export CSV</button>
+    </div>
+  </section>
+
+  <!-- STAT STRIP -->
+  <div class="stat-strip fade-up">
+    <div class="stat-cell">
+      <div class="stat-label">Total Energy</div>
+      <div class="stat-value" id="m-total">0.0000<span>Wh</span></div>
+      <div class="stat-delta" id="m-total-d">No presses yet</div>
+    </div>
+    <div class="stat-cell">
+      <div class="stat-label">Total Presses</div>
+      <div class="stat-value" id="m-presses">0</div>
+      <div class="stat-delta" id="m-press-d">Start logging</div>
+    </div>
+    <div class="stat-cell">
+      <div class="stat-label">Avg / Press</div>
+      <div class="stat-value" id="m-avg">0.0000<span>Wh</span></div>
+      <div class="stat-delta">Running average</div>
+    </div>
+    <div class="stat-cell">
+      <div class="stat-label">Peak Output</div>
+      <div class="stat-value" id="m-peak">0.0000<span>Wh</span></div>
+      <div class="stat-delta" id="m-peak-d">Highest single press</div>
+    </div>
+    <div class="stat-cell">
+      <div class="stat-label">Today</div>
+      <div class="stat-value" id="m-today">0.0000<span>Wh</span></div>
+      <div class="stat-delta" id="m-today-d">—</div>
+    </div>
+  </div>
+
+  <!-- GOAL BAR -->
+  <div class="goal-section">
+    <div class="goal-label">Daily Goal</div>
+    <div class="goal-bar-outer">
+      <div class="goal-bar-inner" id="goal-bar" style="width:0%"></div>
+    </div>
+    <div class="goal-pct" id="goal-pct">0%</div>
+    <div class="goal-target">Target: <span id="goal-target-val">5.0000</span> Wh</div>
+  </div>
+
+  <!-- INPUT PANEL -->
+  <div class="input-panel" id="log-section">
+    <div class="input-panel-title">&#9889; Log a Footstep Press</div>
+    <div class="step-btns">
+      <button class="step-btn active" id="btn-light" onclick="selectType('light',this)">
+        Light Step
+        <span class="sb-val">0.0300 – 0.0600 Wh</span>
+      </button>
+      <button class="step-btn" id="btn-normal" onclick="selectType('normal',this)">
+        Normal Step
+        <span class="sb-val">0.0700 – 0.1200 Wh</span>
+      </button>
+      <button class="step-btn" id="btn-heavy" onclick="selectType('heavy',this)">
+        Heavy Step
+        <span class="sb-val">0.1300 – 0.2000 Wh</span>
+      </button>
+      <button class="step-btn" id="btn-custom" onclick="selectType('custom',this)">
+        Custom Value
+        <span class="sb-val">Enter manually</span>
+      </button>
+    </div>
+    <div class="custom-row">
+      <label>Energy Value (Wh)</label>
+      <input type="number" id="custom-val" placeholder="e.g. 0.0850" step="0.0001" min="0.0001" max="100"/>
+      <div class="zone-row" style="margin-top:0;">
+        <select class="zone-select" id="zone-sel">
+          <option value="A">Tile A — Entry</option>
+          <option value="B">Tile B — Corridor</option>
+          <option value="C">Tile C — Exit</option>
+          <option value="D">Tile D — Stairway</option>
+        </select>
+      </div>
+      <button class="log-btn" onclick="logPress()">Log Press &#9889;</button>
+    </div>
+  </div>
+
+  <!-- CHARTS -->
+  <div class="charts-grid" id="charts-section">
+    <div class="card">
+      <div class="section-head">
+        <div>
+          <div class="section-title">Energy per Press</div>
+          <div class="section-sub" id="chart-sub">Waiting for data…</div>
+        </div>
+      </div>
+      <div class="chart-wrap">
+        <canvas id="barChart" role="img" aria-label="Bar chart of energy generated per press"></canvas>
+      </div>
+    </div>
+    <div class="card">
+      <div class="section-head">
+        <div>
+          <div class="section-title">Cumulative Energy</div>
+          <div class="section-sub">Running total (Wh)</div>
+        </div>
+      </div>
+      <div class="chart-wrap">
+        <canvas id="lineChart" role="img" aria-label="Line chart of cumulative energy generated"></canvas>
+      </div>
+    </div>
+  </div>
+
+  <!-- ZONE STATS -->
+  <div class="section" id="zones">
+    <div class="section-head">
+      <div>
+        <div class="section-title">Zone Performance</div>
+        <div class="section-sub">Energy per sensor tile</div>
+      </div>
+    </div>
+    <div class="zone-grid">
+      <div class="zone-card" data-zone="A">
+        <div class="zone-card-label">Tile A · Entry</div>
+        <div class="zone-card-val" id="zA-val">0.0000 Wh</div>
+        <div class="zone-card-sub"><span id="zA-count">0</span> presses</div>
+        <div class="zone-progress"><div class="zone-progress-fill" id="zA-bar" style="width:0%"></div></div>
+      </div>
+      <div class="zone-card" data-zone="B">
+        <div class="zone-card-label">Tile B · Corridor</div>
+        <div class="zone-card-val" id="zB-val">0.0000 Wh</div>
+        <div class="zone-card-sub"><span id="zB-count">0</span> presses</div>
+        <div class="zone-progress"><div class="zone-progress-fill" id="zB-bar" style="width:0%"></div></div>
+      </div>
+      <div class="zone-card" data-zone="C">
+        <div class="zone-card-label">Tile C · Exit</div>
+        <div class="zone-card-val" id="zC-val">0.0000 Wh</div>
+        <div class="zone-card-sub"><span id="zC-count">0</span> presses</div>
+        <div class="zone-progress"><div class="zone-progress-fill" id="zC-bar" style="width:0%"></div></div>
+      </div>
+      <div class="zone-card" data-zone="D">
+        <div class="zone-card-label">Tile D · Stairway</div>
+        <div class="zone-card-val" id="zD-val">0.0000 Wh</div>
+        <div class="zone-card-sub"><span id="zD-count">0</span> presses</div>
+        <div class="zone-progress"><div class="zone-progress-fill" id="zD-bar" style="width:0%"></div></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- DATA LOG TABLE -->
+  <div class="section" id="data">
+    <div class="section-head">
+      <div>
+        <div class="section-title">Complete Press Database</div>
+        <div class="section-sub" id="table-sub">All data stored in localStorage</div>
+      </div>
+      <div style="display:flex;gap:8px;flex-wrap:wrap;">
+        <button class="export-btn" onclick="exportCSV()">&#8595; CSV</button>
+        <button class="export-btn" onclick="exportJSON()">&#8595; JSON</button>
+        <button class="danger-btn" onclick="clearAll()">&#215; Clear All</button>
+      </div>
+    </div>
+    <div class="card">
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>#</th>
+              <th>Press ID</th>
+              <th>Energy (Wh)</th>
+              <th>Zone / Tile</th>
+              <th>Type</th>
+              <th>Timestamp</th>
+              <th>Bar</th>
+              <th>Action</th>
+            </tr>
+          </thead>
+          <tbody id="db-table">
+            <tr id="empty-row">
+              <td colspan="8" style="text-align:center;padding:2rem;color:var(--text3);font-family:var(--mono);font-size:0.8rem;">
+                No data yet. Log your first press above &#9889;
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+</div><!-- /wrapper -->
+
+<div id="toast">&#9889; Press logged!</div>
+
+<footer>
+  <p>FootStep Power Generation IoT Dashboard &nbsp;|&nbsp; Data stored locally &nbsp;|&nbsp; Built by <span>Your Project</span></p>
+</footer>
+
+<script>
+// ─── DB KEY ───
+const DB_KEY = 'footstep_power_db';
+const GOAL = 5.0;
+
+// ─── LOAD DB ───
+function loadDB() {
+  try { return JSON.parse(localStorage.getItem(DB_KEY)) || []; }
+  catch { return []; }
+}
+function saveDB(data) {
+  localStorage.setItem(DB_KEY, JSON.stringify(data));
+}
+
+let db = loadDB();
+let selectedType = 'light';
+
+// ─── CHARTS INIT ───
+const barCtx = document.getElementById('barChart').getContext('2d');
+const lineCtx = document.getElementById('lineChart').getContext('2d');
+
+const barChart = new Chart(barCtx, {
+  type: 'bar',
+  data: { labels: [], datasets: [{ label: 'Energy (Wh)', data: [], backgroundColor: 'rgba(45,200,120,0.7)', borderColor: '#2dc878', borderWidth: 1, borderRadius: 4 }] },
+  options: {
+    responsive: true, maintainAspectRatio: false,
+    plugins: { legend: { display: false } },
+    scales: {
+      x: { ticks: { color: '#4d7a60', font: { size: 10, family: "'IBM Plex Mono'" }, autoSkip: true, maxTicksLimit: 20 }, grid: { color: 'rgba(45,200,120,0.06)' } },
+      y: { ticks: { color: '#4d7a60', font: { size: 10, family: "'IBM Plex Mono'" }, callback: v => v.toFixed(3) }, grid: { color: 'rgba(45,200,120,0.06)' }, beginAtZero: true }
+    }
+  }
+});
+
+const lineChart = new Chart(lineCtx, {
+  type: 'line',
+  data: { labels: [], datasets: [{ label: 'Cumulative Wh', data: [], borderColor: '#14e6b0', backgroundColor: 'rgba(20,230,176,0.07)', fill: true, tension: 0.4, pointRadius: 2, borderWidth: 2 }] },
+  options: {
+    responsive: true, maintainAspectRatio: false,
+    plugins: { legend: { display: false } },
+    scales: {
+      x: { ticks: { color: '#4d7a60', font: { size: 10, family: "'IBM Plex Mono'" }, autoSkip: true, maxTicksLimit: 15 }, grid: { color: 'rgba(20,230,176,0.06)' } },
+      y: { ticks: { color: '#4d7a60', font: { size: 10, family: "'IBM Plex Mono'" }, callback: v => v.toFixed(3) }, grid: { color: 'rgba(20,230,176,0.06)' }, beginAtZero: true }
+    }
+  }
+});
+
+// ─── SELECT TYPE ───
+function selectType(type, el) {
+  selectedType = type;
+  document.querySelectorAll('.step-btn').forEach(b => b.classList.remove('active'));
+  el.classList.add('active');
+  const inp = document.getElementById('custom-val');
+  if (type === 'light')  inp.placeholder = '0.0300 – 0.0600 (auto)';
+  else if (type === 'normal') inp.placeholder = '0.0700 – 0.1200 (auto)';
+  else if (type === 'heavy')  inp.placeholder = '0.1300 – 0.2000 (auto)';
+  else inp.placeholder = 'Enter your Wh value here';
+}
+
+function rnd(min, max) {
+  return parseFloat((Math.random() * (max - min) + min).toFixed(4));
+}
+
+// ─── LOG PRESS ───
+function logPress() {
+  let val;
+  const customInp = parseFloat(document.getElementById('custom-val').value);
+  if (!isNaN(customInp) && customInp > 0) {
+    val = parseFloat(customInp.toFixed(4));
+  } else {
+    if (selectedType === 'light')  val = rnd(0.0300, 0.0600);
+    else if (selectedType === 'normal') val = rnd(0.0700, 0.1200);
+    else if (selectedType === 'heavy')  val = rnd(0.1300, 0.2000);
+    else { showToast('Enter a custom value!', true); return; }
+  }
+
+  const zone = document.getElementById('zone-sel').value;
+  const now = new Date();
+  const entry = {
+    id: 'FP-' + Date.now(),
+    press: db.length + 1,
+    energy: val,
+    zone: zone,
+    type: selectedType === 'custom' ? 'custom' : selectedType,
+    timestamp: now.toISOString(),
+    date: now.toLocaleDateString('en-IN'),
+    time: now.toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', second: '2-digit' })
+  };
+
+  db.push(entry);
+  saveDB(db);
+  document.getElementById('custom-val').value = '';
+  renderAll();
+  showToast('Press #' + entry.press + ' logged — ' + val.toFixed(4) + ' Wh');
+}
+
+// ─── RENDER ALL ───
+function renderAll() {
+  if (!db.length) {
+    resetStats(); return;
+  }
+
+  const total = db.reduce((a, b) => a + b.energy, 0);
+  const last = db[db.length - 1];
+  const avg = total / db.length;
+  const peak = Math.max(...db.map(d => d.energy));
+  const todayStr = new Date().toLocaleDateString('en-IN');
+  const todayData = db.filter(d => d.date === todayStr);
+  const todayTotal = todayData.reduce((a, b) => a + b.energy, 0);
+
+  // Stats
+  document.getElementById('m-total').innerHTML = total.toFixed(4) + '<span>Wh</span>';
+  document.getElementById('m-total-d').textContent = '+' + last.energy.toFixed(4) + ' Wh last press';
+  document.getElementById('m-presses').textContent = db.length;
+  document.getElementById('m-press-d').textContent = 'Last: ' + last.time;
+  document.getElementById('m-avg').innerHTML = avg.toFixed(4) + '<span>Wh</span>';
+  document.getElementById('m-peak').innerHTML = peak.toFixed(4) + '<span>Wh</span>';
+  document.getElementById('m-today').innerHTML = todayTotal.toFixed(4) + '<span>Wh</span>';
+  document.getElementById('m-today-d').textContent = todayData.length + ' presses today';
+
+  // Goal
+  const goalPct = Math.min(100, (todayTotal / GOAL * 100));
+  document.getElementById('goal-bar').style.width = goalPct.toFixed(1) + '%';
+  document.getElementById('goal-pct').textContent = goalPct.toFixed(1) + '%';
+
+  // Chart sub
+  document.getElementById('chart-sub').textContent = db.length + ' total presses';
+  document.getElementById('table-sub').textContent = db.length + ' records in database';
+
+  // Bar chart (last 40)
+  const recent = db.slice(-40);
+  barChart.data.labels = recent.map(d => 'P' + d.press);
+  barChart.data.datasets[0].data = recent.map(d => d.energy);
+  barChart.update();
+
+  // Line chart cumulative
+  let cum = 0;
+  const cumData = db.map(d => { cum += d.energy; return parseFloat(cum.toFixed(4)); });
+  lineChart.data.labels = db.map(d => 'P' + d.press);
+  lineChart.data.datasets[0].data = cumData;
+  lineChart.update();
+
+  // Zones
+  const zones = ['A','B','C','D'];
+  const zoneMax = Math.max(...zones.map(z => {
+    return db.filter(d => d.zone === z).reduce((a,b) => a + b.energy, 0);
+  })) || 1;
+  zones.forEach(z => {
+    const zd = db.filter(d => d.zone === z);
+    const ze = zd.reduce((a, b) => a + b.energy, 0);
+    document.getElementById('z' + z + '-val').textContent = ze.toFixed(4) + ' Wh';
+    document.getElementById('z' + z + '-count').textContent = zd.length;
+    document.getElementById('z' + z + '-bar').style.width = Math.min(100, (ze / zoneMax * 100)).toFixed(1) + '%';
+  });
+
+  // Table
+  renderTable();
+}
+
+function renderTable() {
+  const tbody = document.getElementById('db-table');
+  const empRow = document.getElementById('empty-row');
+  if (empRow) empRow.remove();
+
+  // Build fresh
+  tbody.innerHTML = '';
+  const peak = Math.max(...db.map(d => d.energy));
+  [...db].reverse().forEach((entry, i) => {
+    const barPct = Math.min(100, (entry.energy / peak * 100)).toFixed(0);
+    const typeLabel = { light: 'Light', normal: 'Normal', heavy: 'Heavy', custom: 'Custom' }[entry.type] || entry.type;
+    const tr = document.createElement('tr');
+    if (i === 0) tr.classList.add('new-row');
+    tr.innerHTML = `
+      <td>${db.length - i}</td>
+      <td style="font-family:var(--mono);font-size:0.75rem;color:var(--text3);">${entry.id}</td>
+      <td class="td-energy">${entry.energy.toFixed(4)}</td>
+      <td><span class="td-zone zone-${entry.zone}">Tile ${entry.zone}</span></td>
+      <td style="font-size:0.8rem;">${typeLabel}</td>
+      <td style="font-size:0.78rem;color:var(--text3);font-family:var(--mono);">${entry.date} ${entry.time}</td>
+      <td><div class="td-bar"><div class="td-bar-fill" style="width:${barPct}%"></div></div></td>
+      <td><button class="del-btn" onclick="deleteEntry('${entry.id}')">del</button></td>
+    `;
+    tbody.appendChild(tr);
+  });
+}
+
+function resetStats() {
+  document.getElementById('m-total').innerHTML = '0.0000<span>Wh</span>';
+  document.getElementById('m-total-d').textContent = 'No presses yet';
+  document.getElementById('m-presses').textContent = '0';
+  document.getElementById('m-press-d').textContent = 'Start logging';
+  document.getElementById('m-avg').innerHTML = '0.0000<span>Wh</span>';
+  document.getElementById('m-peak').innerHTML = '0.0000<span>Wh</span>';
+  document.getElementById('m-today').innerHTML = '0.0000<span>Wh</span>';
+  document.getElementById('m-today-d').textContent = '—';
+  document.getElementById('goal-bar').style.width = '0%';
+  document.getElementById('goal-pct').textContent = '0%';
+  document.getElementById('chart-sub').textContent = 'Waiting for data…';
+  document.getElementById('table-sub').textContent = 'All data stored in localStorage';
+  barChart.data.labels = []; barChart.data.datasets[0].data = []; barChart.update();
+  lineChart.data.labels = []; lineChart.data.datasets[0].data = []; lineChart.update();
+  ['A','B','C','D'].forEach(z => {
+    document.getElementById('z'+z+'-val').textContent = '0.0000 Wh';
+    document.getElementById('z'+z+'-count').textContent = '0';
+    document.getElementById('z'+z+'-bar').style.width = '0%';
+  });
+  document.getElementById('db-table').innerHTML = `<tr id="empty-row"><td colspan="8" style="text-align:center;padding:2rem;color:var(--text3);font-family:var(--mono);font-size:0.8rem;">No data yet. Log your first press above &#9889;</td></tr>`;
+}
+
+// ─── DELETE ───
+function deleteEntry(id) {
+  db = db.filter(d => d.id !== id);
+  db.forEach((d, i) => d.press = i + 1);
+  saveDB(db);
+  renderAll();
+  showToast('Entry deleted');
+}
+
+// ─── CLEAR ALL ───
+function clearAll() {
+  if (!confirm('Delete ALL press records? This cannot be undone.')) return;
+  db = [];
+  saveDB(db);
+  renderAll();
+  showToast('All records cleared', true);
+}
+
+// ─── EXPORT CSV ───
+function exportCSV() {
+  if (!db.length) { showToast('No data to export', true); return; }
+  const rows = [['Press#','ID','Energy_Wh','Zone','Type','Date','Time']];
+  db.forEach(d => rows.push([d.press, d.id, d.energy, 'Tile '+d.zone, d.type, d.date, d.time]));
+  const csv = rows.map(r => r.join(',')).join('\n');
+  download('footstep_power_data.csv', csv, 'text/csv');
+  showToast('CSV exported!');
+}
+
+// ─── EXPORT JSON ───
+function exportJSON() {
+  if (!db.length) { showToast('No data to export', true); return; }
+  download('footstep_power_data.json', JSON.stringify(db, null, 2), 'application/json');
+  showToast('JSON exported!');
+}
+
+function download(filename, content, mime) {
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(new Blob([content], { type: mime }));
+  a.download = filename;
+  a.click();
+}
+
+// ─── TOAST ───
+function showToast(msg, isErr) {
+  const t = document.getElementById('toast');
+  t.textContent = (isErr ? '⚠ ' : '⚡ ') + msg;
+  t.style.borderColor = isErr ? 'var(--red)' : 'var(--green)';
+  t.style.color = isErr ? 'var(--red)' : 'var(--green)';
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 2800);
+}
+
+// ─── ENTER KEY ───
+document.getElementById('custom-val').addEventListener('keydown', e => {
+  if (e.key === 'Enter') logPress();
+});
+
+// ─── INIT ───
+renderAll();
+</script>
+</body>
+</html>
